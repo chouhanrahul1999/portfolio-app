@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + React</title>
+    <script type="module" crossorigin src="/assets/index-DFb4ZKX9.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CyEuwZV_.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      (function () {
+        const imageMap = {
+          brainly: '/assets/brainly.svg',
+          excelidraw: '/assets/excelidraw.svg',
+          excalidraw: '/assets/excelidraw.svg',
+          paytm: '/assets/paytm.svg'
+        };
+
+        function findCardContainer(element) {
+          let el = element;
+          const isCard = (node) => {
+            if (!node || node.nodeType !== 1) return false;
+            const cls = (node.getAttribute('class') || '').toLowerCase();
+            return cls.includes('card') || cls.includes('jobcard') || cls.includes('experience') || cls.includes('project');
+          };
+          while (el && el !== document.body) {
+            if (isCard(el)) return el;
+            el = el.parentElement;
+          }
+          return null;
+        }
+
+        function attachImageToCardByLabel(label, src) {
+          const xpath = `//*[contains(translate(normalize-space(text()), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '${label}')]`;
+          const it = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+          for (let i = 0; i < it.snapshotLength; i++) {
+            const node = it.snapshotItem(i);
+            const card = findCardContainer(node) || node.closest('div,section,article,li');
+            if (!card) continue;
+            const already = card.querySelector('img[data-injected-logo="1"]');
+            if (already) continue;
+            const img = document.createElement('img');
+            img.src = src;
+            img.alt = label + ' logo';
+            img.width = 64; // adjust as needed
+            img.height = 64;
+            img.setAttribute('data-injected-logo', '1');
+            img.style.objectFit = 'contain';
+            img.style.display = 'block';
+            img.style.maxWidth = '100%';
+            // Try to prepend near top
+            card.firstElementChild ? card.insertBefore(img, card.firstElementChild) : card.appendChild(img);
+          }
+        }
+
+        function injectExperienceGroupIcons() {
+          // Heuristic: find sections likely representing work experience and prepend group*.svg icons
+          const candidates = Array.from(document.querySelectorAll('section,div,article'))
+            .filter(el => /experience|experince|work/i.test(el.className || '') || /experience|experince|work/i.test(el.textContent || ''));
+          // Pick distinct card-like children
+          const cards = [];
+          for (const root of candidates) {
+            const children = Array.from(root.querySelectorAll('div,article,li'))
+              .filter(el => /card|job|experience|experince/i.test(el.className || ''));
+            for (const el of children) {
+              if (!cards.includes(el)) cards.push(el);
+              if (cards.length >= 4) break;
+            }
+            if (cards.length >= 4) break;
+          }
+          const groups = ['group1.svg','group2.svg','group3.svg','group4.svg'];
+          cards.slice(0,4).forEach((card, idx) => {
+            const already = card.querySelector('img[data-injected-group="1"]');
+            if (already) return;
+            const img = document.createElement('img');
+            img.src = '/assets/' + groups[idx];
+            img.alt = 'experience icon ' + (idx + 1);
+            img.width = 48;
+            img.height = 48;
+            img.setAttribute('data-injected-group', '1');
+            img.style.objectFit = 'contain';
+            img.style.display = 'block';
+            img.style.maxWidth = '100%';
+            card.firstElementChild ? card.insertBefore(img, card.firstElementChild) : card.appendChild(img);
+          });
+        }
+
+        function run() {
+          Object.entries(imageMap).forEach(([label, src]) => attachImageToCardByLabel(label, src));
+          injectExperienceGroupIcons();
+        }
+
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+          setTimeout(run, 0);
+        } else {
+          document.addEventListener('DOMContentLoaded', run);
+        }
+      })();
+    </script>
+  </body>
+</html>
